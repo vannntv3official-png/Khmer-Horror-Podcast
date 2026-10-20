@@ -1,0 +1,25 @@
+appId: com.khmerhorror.admin
+productName: Khmer Horror Admin
+electronVersion: 33.2.0
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - node_modules/**/*
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Khmer Horror Admin

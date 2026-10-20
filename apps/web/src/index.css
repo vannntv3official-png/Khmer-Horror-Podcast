@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-khmer: 'Noto Sans Khmer', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: #faf9fd;
+    color: #1e1b4b;
+    font-family: var(--font-khmer);
+    overflow-x: hidden;
+  }
+}
+
+/* Glass + Light Design System Components */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(233, 213, 255, 0.5);
+  box-shadow: 0 10px 30px -5px rgba(109, 40, 217, 0.05), 0 0 1px 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(192, 132, 252, 0.6);
+  box-shadow: 0 14px 34px -4px rgba(109, 40, 217, 0.12), 0 0 1px 1px rgba(255, 255, 255, 0.9) inset;
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(233, 213, 255, 0.6);
+}
+
+.glass-dropdown {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(216, 180, 254, 0.4);
+  box-shadow: 0 20px 40px -10px rgba(109, 40, 217, 0.15);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
+}
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #9333ea;
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15);
+  outline: none;
+}
+
+/* Horror Ambient Glows */
+.horror-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(147, 51, 234, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.horror-banner {
+  background: linear-gradient(135deg, #24083a 0%, #3b0764 50%, #1e0826 100%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

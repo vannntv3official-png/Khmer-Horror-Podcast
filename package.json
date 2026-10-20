@@ -1,0 +1,33 @@
+{
+  "name": "khmer-horror-podcast",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Khmer Horror Podcast - Full-Stack Website and Electron Admin",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=@khmer-horror/web",
+    "dev:admin": "npm run dev --workspace=@khmer-horror/admin",
+    "build:shared": "npm run build --workspace=@khmer-horror/shared",
+    "build:web": "npm run build --workspace=@khmer-horror/web",
+    "build:admin": "npm run build --workspace=@khmer-horror/admin",
+    "build:admin:win": "npm run build:win --workspace=@khmer-horror/admin",
+    "build:all": "npm run build:shared && npm run build:web && npm run build:admin",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "keywords": [
+    "khmer",
+    "horror",
+    "podcast",
+    "audio",
+    "electron",
+    "react",
+    "supabase"
+  ],
+  "author": "Khmer Horror Podcast Team",
+  "license": "MIT"
+}
