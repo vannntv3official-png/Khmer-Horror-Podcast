@@ -23,7 +23,14 @@ export const LoginPage: React.FC = () => {
     setLoading(false)
 
     if (res.error) {
-      setError(res.error.message || 'អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ')
+      const msg = res.error.message?.toLowerCase() || ''
+      if (msg.includes('email not confirmed')) {
+        setError('អ៊ីមែលនេះមិនទាន់បាន Confirm នៅឡើយទេ។ សូមដំណើរការ script ក្នុង Supabase SQL Editor ដើម្បី Auto-Confirm ឬបិទ "Confirm email" ក្នុង Supabase Dashboard។')
+      } else if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+        setError('អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ សូមពិនិត្យឡើងវិញ')
+      } else {
+        setError(res.error.message || 'អ៊ីមែល ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ')
+      }
     } else {
       navigate(from, { replace: true })
     }

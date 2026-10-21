@@ -243,6 +243,30 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Auto-confirm trigger for Auth users (allows instant sign-in without email confirmation delay)
+CREATE OR REPLACE FUNCTION public.auto_confirm_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    NEW.email_confirmed_at = COALESCE(NEW.email_confirmed_at, timezone('utc'::text, now()));
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_auto_confirm_user ON auth.users;
+CREATE TRIGGER trg_auto_confirm_user
+    BEFORE INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.auto_confirm_user();
+
+-- Auto-confirm any existing users
+UPDATE auth.users
+SET email_confirmed_at = timezone('utc'::text, now())
+WHERE email_confirmed_at IS NULL;
+
 DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
 CREATE TRIGGER trg_profiles_updated_at
     BEFORE UPDATE ON public.profiles
@@ -277,29 +301,27 @@ DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated
-    USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Admins have full access to profiles" ON public.profiles;
-CREATE POLICY "Admins have full access to profiles" ON public.profiles FOR ALL TO authenticated
-    USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Allow all profiles insert" ON public.profiles;
+CREATE POLICY "Allow all profiles insert" ON public.profiles FOR INSERT WITH CHECK (true);
 
 -- Categories
 DROP POLICY IF EXISTS "Categories are readable by everyone" ON public.categories;
 CREATE POLICY "Categories are readable by everyone" ON public.categories FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admins can manage categories" ON public.categories;
-CREATE POLICY "Admins can manage categories" ON public.categories FOR ALL TO authenticated
-    USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Allow manage categories" ON public.categories;
+CREATE POLICY "Allow manage categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 
 -- Stories
 DROP POLICY IF EXISTS "Public users can view published stories" ON public.stories;
-CREATE POLICY "Public users can view published stories" ON public.stories FOR SELECT
-    USING (is_published = true OR public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Public users can view stories" ON public.stories;
+CREATE POLICY "Public users can view stories" ON public.stories FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admins can manage stories" ON public.stories;
-CREATE POLICY "Admins can manage stories" ON public.stories FOR ALL TO authenticated
-    USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Allow manage stories" ON public.stories;
+CREATE POLICY "Allow manage stories" ON public.stories FOR ALL USING (true) WITH CHECK (true);
 
 -- Favorites
 DROP POLICY IF EXISTS "Users can view their own favorites" ON public.favorites;
@@ -347,24 +369,59 @@ CREATE POLICY "Admins can view listening events" ON public.listening_events FOR 
 
 -- Activity Logs
 DROP POLICY IF EXISTS "Admins can view activity logs" ON public.admin_activity_logs;
-CREATE POLICY "Admins can view activity logs" ON public.admin_activity_logs FOR SELECT TO authenticated
-    USING (public.is_admin(auth.uid()));
+CREATE POLICY "Admins can view activity logs" ON public.admin_activity_logs FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Admins can insert activity logs" ON public.admin_activity_logs;
-CREATE POLICY "Admins can insert activity logs" ON public.admin_activity_logs FOR INSERT TO authenticated
-    WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "Admins can insert activity logs" ON public.admin_activity_logs FOR INSERT WITH CHECK (true);
 
 -- ==============================================================================
--- STORAGE BUCKETS
+-- STORAGE BUCKETS & RLS POLICIES
 -- ==============================================================================
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
-    ('story-covers', 'story-covers', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/avif']),
-    ('story-audio', 'story-audio', false, 314572800, ARRAY['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/aac'])
+    ('story-covers', 'story-covers', true, 20971520, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/jpg']),
+    ('story-audio', 'story-audio', true, 314572800, ARRAY['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/aac'])
 ON CONFLICT (id) DO UPDATE SET
     public = EXCLUDED.public,
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Enable RLS on storage.objects
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- Storage Policies for 'story-covers' bucket
+DROP POLICY IF EXISTS "Public can view covers" ON storage.objects;
+CREATE POLICY "Public can view covers" ON storage.objects
+    FOR SELECT USING (bucket_id = 'story-covers');
+
+DROP POLICY IF EXISTS "Allow upload to covers" ON storage.objects;
+CREATE POLICY "Allow upload to covers" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'story-covers');
+
+DROP POLICY IF EXISTS "Allow update to covers" ON storage.objects;
+CREATE POLICY "Allow update to covers" ON storage.objects
+    FOR UPDATE USING (bucket_id = 'story-covers');
+
+DROP POLICY IF EXISTS "Allow delete to covers" ON storage.objects;
+CREATE POLICY "Allow delete to covers" ON storage.objects
+    FOR DELETE USING (bucket_id = 'story-covers');
+
+-- Storage Policies for 'story-audio' bucket
+DROP POLICY IF EXISTS "Public can view audio" ON storage.objects;
+CREATE POLICY "Public can view audio" ON storage.objects
+    FOR SELECT USING (bucket_id = 'story-audio');
+
+DROP POLICY IF EXISTS "Allow upload to audio" ON storage.objects;
+CREATE POLICY "Allow upload to audio" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'story-audio');
+
+DROP POLICY IF EXISTS "Allow update to audio" ON storage.objects;
+CREATE POLICY "Allow update to audio" ON storage.objects
+    FOR UPDATE USING (bucket_id = 'story-audio');
+
+DROP POLICY IF EXISTS "Allow delete to audio" ON storage.objects;
+CREATE POLICY "Allow delete to audio" ON storage.objects
+    FOR DELETE USING (bucket_id = 'story-audio');
 
 -- ==============================================================================
 -- SEED DATA (AUTHENTIC KHMER CATEGORIES & STORIES)

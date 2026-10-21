@@ -34,7 +34,12 @@ export const RegisterPage: React.FC = () => {
     setLoading(false)
 
     if (res.error) {
-      setError(res.error.message || 'ការចុះឈ្មោះមានបញ្ហា សូមព្យាយាមម្តងទៀត')
+      const msg = res.error.message?.toLowerCase() || ''
+      if (msg.includes('rate limit')) {
+        setError('បានលើសកំណត់នៃការផ្ញើអ៊ីមែលរបស់ Supabase (Rate limit exceeded)។ សូមដំណើរការ script Auto-Confirm ក្នុង Supabase SQL Editor ដើម្បីចុះឈ្មោះបានភ្លាមៗ។')
+      } else {
+        setError(res.error.message || 'ការចុះឈ្មោះមានបញ្ហា សូមព្យាយាមម្តងទៀត')
+      }
     } else {
       setSuccess(true)
       setTimeout(() => {

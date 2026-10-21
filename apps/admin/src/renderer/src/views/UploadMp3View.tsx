@@ -123,12 +123,15 @@ export const UploadMp3View: React.FC<UploadMp3ViewProps> = ({
       setUploadProgress(85)
 
       // 3. Insert Story Record into Supabase
+      const isUUID = Boolean(categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId))
+      const safeCategoryId = isUUID ? categoryId : null
+
       const newStoryRecord: Story = {
         id: `story_${Date.now()}`,
         title,
         slug: storySlug,
         description,
-        category_id: categoryId || null,
+        category_id: safeCategoryId,
         cover_path: coverPath || (coverPreview ? coverPreview : null),
         audio_path: audioPath,
         duration_seconds: durationSeconds || 1200,
@@ -145,7 +148,7 @@ export const UploadMp3View: React.FC<UploadMp3ViewProps> = ({
           title,
           slug: storySlug,
           description,
-          category_id: categoryId || null,
+          category_id: safeCategoryId,
           cover_path: coverPath,
           audio_path: audioPath,
           duration_seconds: durationSeconds || 1200,

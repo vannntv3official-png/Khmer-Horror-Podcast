@@ -57,11 +57,14 @@ export async function uploadCoverImage(file: File, storySlug: string): Promise<s
   const fileExt = file.name.split('.').pop()
   const filePath = `covers/${storySlug}-${Date.now()}.${fileExt}`
 
+  const mimeType = file.type || (fileExt === 'webp' ? 'image/webp' : fileExt === 'png' ? 'image/png' : 'image/jpeg')
+
   const { error } = await supabase.storage
     .from('story-covers')
     .upload(filePath, file, {
       cacheControl: '3600',
-      upsert: true
+      upsert: true,
+      contentType: mimeType
     })
 
   if (error) throw error
@@ -81,14 +84,17 @@ export async function uploadAudioFile(
     return `audio/${storySlug}-${Date.now()}.mp3`
   }
 
-  const fileExt = file.name.split('.').pop() || 'mp3'
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp3'
   const filePath = `audio/${storySlug}-${Date.now()}.${fileExt}`
+
+  const mimeType = file.type || (fileExt === 'wav' ? 'audio/wav' : fileExt === 'ogg' ? 'audio/ogg' : fileExt === 'm4a' ? 'audio/x-m4a' : 'audio/mpeg')
 
   const { error } = await supabase.storage
     .from('story-audio')
     .upload(filePath, file, {
       cacheControl: '3600',
-      upsert: true
+      upsert: true,
+      contentType: mimeType
     })
 
   if (error) throw error

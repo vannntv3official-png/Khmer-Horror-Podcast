@@ -119,6 +119,8 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
     try {
       const exists = stories.some((s) => s.id === editingStory.id)
       let updatedList: Story[] = []
+      const isUUID = Boolean(editingStory.category_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(editingStory.category_id))
+      const safeCatId = isUUID ? editingStory.category_id : null
 
       if (exists) {
         updatedList = stories.map((s) => (s.id === editingStory.id ? editingStory : s))
@@ -127,7 +129,7 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
             title: editingStory.title,
             slug: editingStory.slug || slugify(editingStory.title),
             description: editingStory.description,
-            category_id: editingStory.category_id,
+            category_id: safeCatId,
             duration_seconds: editingStory.duration_seconds,
             is_premium: editingStory.is_premium,
             is_published: editingStory.is_published,
@@ -143,7 +145,7 @@ export const StoriesView: React.FC<StoriesViewProps> = ({
             title: editingStory.title,
             slug: editingStory.slug || slugify(editingStory.title),
             description: editingStory.description,
-            category_id: editingStory.category_id,
+            category_id: safeCatId,
             duration_seconds: editingStory.duration_seconds,
             is_premium: editingStory.is_premium,
             is_published: editingStory.is_published,
