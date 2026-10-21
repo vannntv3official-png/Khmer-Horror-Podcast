@@ -46,16 +46,32 @@ export async function logAdminAction(
 }
 
 /**
+ * Generate S3/Supabase compliant storage key (ASCII alphanumeric and hyphens only)
+ * Prevents "Invalid key" errors when story titles or slugs contain Khmer Unicode
+ */
+function toSafeStorageKey(prefix: string, nameOrSlug: string, ext: string): string {
+  const safeAscii = nameOrSlug
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 50)
+
+  const identifier = safeAscii ? `${safeAscii}-${Date.now()}` : `track-${Date.now()}`
+  return `${prefix}/${identifier}.${ext}`
+}
+
+/**
  * Upload cover image to storage bucket 'story-covers'
  */
 export async function uploadCoverImage(file: File, storySlug: string): Promise<string> {
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'webp'
+  const filePath = toSafeStorageKey('covers', storySlug, fileExt)
+
   if (!isSupabaseConfigured) {
     // Return sample local object path
-    return `covers/${storySlug}-${Date.now()}.webp`
+    return filePath
   }
-
-  const fileExt = file.name.split('.').pop()
-  const filePath = `covers/${storySlug}-${Date.now()}.${fileExt}`
 
   const mimeType = file.type || (fileExt === 'webp' ? 'image/webp' : fileExt === 'png' ? 'image/png' : 'image/jpeg')
 
@@ -79,13 +95,13 @@ export async function uploadAudioFile(
   storySlug: string,
   onProgress?: (progress: number) => void
 ): Promise<string> {
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp3'
+  const filePath = toSafeStorageKey('audio', storySlug, fileExt)
+
   if (!isSupabaseConfigured) {
     // Return mock path
-    return `audio/${storySlug}-${Date.now()}.mp3`
+    return filePath
   }
-
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp3'
-  const filePath = `audio/${storySlug}-${Date.now()}.${fileExt}`
 
   const mimeType = file.type || (fileExt === 'wav' ? 'audio/wav' : fileExt === 'ogg' ? 'audio/ogg' : fileExt === 'm4a' ? 'audio/x-m4a' : 'audio/mpeg')
 
