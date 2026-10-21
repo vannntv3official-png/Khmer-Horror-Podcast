@@ -386,8 +386,8 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Storage Policies for 'story-covers' bucket
+-- (RLS is already enabled on storage.objects by default)
 
 -- Storage Policies for 'story-covers' bucket
 DROP POLICY IF EXISTS "Public can view covers" ON storage.objects;
